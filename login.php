@@ -9,21 +9,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
 
     // Prepare and bind
-    $stmt = $conn->prepare("SELECT id, username, password FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, username, password, status FROM user WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows == 1) {
         $user = $result->fetch_assoc();
-        if (password_verify($password, $user['password'])) {
-            // Set session variables
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            
-            // Redirect to index page
-            header("Location: index.php");
-            exit();
+        if ($password === $user['password']) {
+            if ($user['status'] == 1) {
+                // Set session variables
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                
+                // Redirect to index page
+                header("Location: index.php");
+                exit();
+            } else {
+                $message = "Your account is inactive. Please contact the administrator.";
+            }
         } else {
             $message = "Invalid password!";
         }

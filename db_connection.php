@@ -2,7 +2,7 @@
 $host = "localhost";
 $username = "root";  // default XAMPP username
 $password = "12345678";      // default XAMPP password
-$database = "phpprojectdb";
+$database = "phpproject";
 
 // Create connection
 $conn = new mysqli($host, $username, $password, $database);

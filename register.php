@@ -4,8 +4,6 @@ require_once 'db_connection.php';
 $message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $fullname = $_POST['fullname'];
-    $email = $_POST['email'];
     $username = $_POST['username'];
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm-password'];
@@ -14,24 +12,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($password !== $confirm_password) {
         $message = "Passwords do not match!";
     } else {
-        // Hash the password
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
-        // Prepare and bind
-        $stmt = $conn->prepare("INSERT INTO users (fullname, email, username, password) VALUES (?, ?, ?, ?)");
-        $stmt->bind_param("ssss", $fullname, $email, $username, $hashed_password);
-
-        // Execute the statement
-        if ($stmt->execute()) {
-            $message = "Registration successful!";
-            // Redirect to login page after successful registration
-            header("Location: login.php");
-            exit();
+        // Check if username already exists
+        $check_stmt = $conn->prepare("SELECT id FROM user WHERE username = ?");
+        $check_stmt->bind_param("s", $username);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
+        
+        if ($check_result->num_rows > 0) {
+            $message = "Username already exists!";
         } else {
-            $message = "Error: " . $stmt->error;
-        }
+            // Prepare and bind
+            $stmt = $conn->prepare("INSERT INTO user (username, password, status) VALUES (?, ?, 1)");
+            $stmt->bind_param("ss", $username, $password);
 
-        $stmt->close();
+            // Execute the statement
+            if ($stmt->execute()) {
+                $message = "Registration successful!";
+                // Redirect to login page after successful registration
+                header("Location: login.php");
+                exit();
+            } else {
+                $message = "Error: " . $stmt->error;
+            }
+
+            $stmt->close();
+        }
+        $check_stmt->close();
     }
 }
 ?>
@@ -53,16 +59,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
         
         <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>">
-            <div class="input-group">
-                <label for="fullname">Full Name</label>
-                <input type="text" id="fullname" name="fullname" placeholder="Enter your full name" required>
-            </div>
-            
-            <div class="input-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" placeholder="Enter your email" required>
-            </div>
-            
             <div class="input-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" placeholder="Choose a username" required>
